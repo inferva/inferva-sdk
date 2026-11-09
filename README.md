@@ -3,16 +3,16 @@
 TypeScript client for the [INFERVA](https://inferva.xyz) agent endpoint.
 
 INFERVA is one endpoint that AI agents pay through. An agent sends an OpenAI-style chat request with its key, INFERVA
-routes it to a provider, meters it, charges the key owner in USDC and writes the request to a hash-chained settlement
-log. The protocol fee on every request goes to $INFER stakers and to the capacity sponsors whose capacity served it.
-INFERVA is launching on Elysium.
+routes it to a provider, meters it, charges the key owner in USDG and writes the request to a hash-chained settlement
+log. The protocol fee on every request is split between the capacity sponsor whose capacity served it and the
+treasury. INFERVA is launching on Robinhood Chain.
 
 This SDK gives you:
 
 - `chat.completions.create()`, plain or streamed (an async iterator of `chat.completion.chunk` events)
 - `models.list()`
-- full typing of the `inferva` block every response carries: cost in USDC, the fee breakdown, tier, capacity
-  position, epoch, settlement hash and receipt URL
+- full typing of the `inferva` block every response carries: cost in USDG, the fee breakdown, capacity position,
+  epoch, settlement hash and receipt URL
 - typed errors for every error code the endpoint returns
 - read-only helpers for the public network data: `stats()`, `params()`, `chain()`, `requests()`
 
@@ -35,8 +35,8 @@ Once published it will be `pnpm add @inferva/sdk`.
 ## Get a key
 
 Open [dapp.inferva.xyz](https://dapp.inferva.xyz), connect a wallet and sign in, then create a key under
-**Endpoint & keys**. Keys start with `inf_sk_` and are shown once. Requests are paid from the USDC balance of the
-account that owns the key, and that account's stake sets its tier.
+**Endpoint & keys**. Keys start with `inf_sk_` and are shown once. Requests are paid from the USDG balance of the
+account that owns the key. Every account has the same rate limit, 10 requests per minute.
 
 Keep the key on the server. Do not ship it to a browser.
 
@@ -53,23 +53,19 @@ const res = await inferva.chat.completions.create({
 });
 
 console.log(res.choices[0].message.content);
-console.log(res.inferva.cost_usdc, res.inferva.receipt);
+console.log(res.inferva.cost_usdg, res.inferva.receipt);
 ```
 
-`res.inferva` looks like this (example values from the [docs](https://docs.inferva.xyz/api/chat-completions)):
+`res.inferva` looks like this (example values; see the [docs](https://docs.inferva.xyz/api/chat-completions)):
 
 ```json
 {
   "provider": "Basalt Inference",
-  "priority": false,
-  "tier": "No tier",
-  "cost_usdc": 0.000099,
+  "cost_usdg": 0.000099,
   "breakdown": {
     "provider_cost": 0.00009,
-    "discount": 0,
     "protocol_fee": 0.000009,
-    "to_stakers": 0.000004,
-    "to_sponsor": 0.000003,
+    "to_sponsor": 0.000007,
     "to_treasury": 0.000002
   },
   "capacity": "cap_9e41d2a07b3c",
@@ -130,26 +126,26 @@ Returns a `ChatCompletion`: `id` (also the settlement record id), `model`, `choi
 ### `models.list()`
 
 `GET /v1/models`, no key needed. Returns `auto` plus every model an active provider serves, with the provider name in
-`owned_by` and its price in USDC per 1,000 tokens in `price_per_1k_usdc`.
+`owned_by` and its price in USDG per 1,000 tokens in `price_per_1k_usdg`.
 
 ### Network data (read-only, no key)
 
 | Method                       | Route               | Returns                                                                       |
 | ---------------------------- | ------------------- | ----------------------------------------------------------------------------- |
-| `stats()`                    | `GET /api/stats`    | Volume, fees, requests, staking, capacity, providers and the last 24 epochs.  |
+| `stats()`                    | `GET /api/stats`    | Volume, fees, requests, sponsor/treasury shares, capacity, last 24 epochs.    |
 | `params()`                   | `GET /api/params`   | `{ params, info }`: current protocol parameters and what each one means.      |
 | `chain({ after?, limit? })`  | `GET /api/chain`    | `{ genesis, records }`: settlement records in order after `seq` `after`.      |
 | `requests({ limit? })`       | `GET /api/requests` | The latest settled requests across the network, newest first.                 |
 
 `limit` is clamped to 1 to 200 by the server. Amounts from these routes are **integers in micro units**
-(1 USDC = 1,000,000). Use `fromMicro()` to convert:
+(1 USDG = 1,000,000). Use `fromMicro()` to convert:
 
 ```ts
 import { InfervaClient, fromMicro } from "@inferva/sdk";
 
 const inferva = new InfervaClient();
 const stats = await inferva.stats();
-console.log(`${stats.requests} requests, ${fromMicro(stats.fees)} USDC in fees`);
+console.log(`${stats.requests} requests, ${fromMicro(stats.fees)} USDG in fees`);
 
 const { genesis, records } = await inferva.chain({ after: 0, limit: 100 });
 ```
@@ -169,7 +165,7 @@ for await (const chunk of stream) {
   process.stdout.write(chunk.choices[0]?.delta.content ?? "");
 }
 
-console.log(stream.usage, stream.inferva?.cost_usdc);
+console.log(stream.usage, stream.inferva?.cost_usdg);
 ```
 
 Chunks follow the `chat.completion.chunk` shape. The request is settled once, at the end, with the real usage: the
@@ -189,11 +185,11 @@ Every error extends `InfervaError` with `status`, `type`, `message`, `body` and 
 | ------ | ----------------------- | ------------------------ | ---------------------------------------------------------- |
 | 400    | `invalid_request_error` | `BadRequestError`        | No `messages` array, or no message has text content        |
 | 401    | `invalid_api_key`       | `AuthenticationError`    | Missing, unknown or revoked key                            |
-| 402    | `insufficient_funds`    | `InsufficientFundsError` | The key owner's USDC balance cannot cover the request      |
+| 402    | `insufficient_funds`    | `InsufficientFundsError` | The key owner's USDG balance cannot cover the request      |
 | 402    | `spend_cap_reached`     | `SpendCapReachedError`   | The key's monthly spend cap would be exceeded              |
 | 403    | `model_not_allowed`     | `ModelNotAllowedError`   | The key's allowed-models list excludes this model          |
 | 404    | `model_not_found`       | `ModelNotFoundError`     | No active provider serves the requested model              |
-| 429    | `rate_limit_exceeded`   | `RateLimitError`         | Over the tier's requests per minute; see `retryAfter`      |
+| 429    | `rate_limit_exceeded`   | `RateLimitError`         | Over the per-account requests per minute; see `retryAfter` |
 | 502    | `provider_error`        | `ProviderError`          | The provider could not complete the request                |
 | 503    | `capacity_exhausted`    | `CapacityExhaustedError` | No sponsored capacity position has room for the request    |
 | 503    | `settlement_busy`       | `SettlementBusyError`    | The settlement log was busy; retry                         |
@@ -212,7 +208,7 @@ try {
   await inferva.chat.completions.create({ messages: [{ role: "user", content: "Hi" }] });
 } catch (err) {
   if (err instanceof RateLimitError) await sleep((err.retryAfter ?? 60) * 1000);
-  else if (err instanceof InsufficientFundsError) console.error("Top up the key owner's USDC balance");
+  else if (err instanceof InsufficientFundsError) console.error("Top up the key owner's USDG balance");
   else if (err instanceof CapacityExhaustedError) console.error("No sponsored capacity has room right now");
   else throw err;
 }

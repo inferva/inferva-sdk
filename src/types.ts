@@ -1,9 +1,9 @@
 // Wire types for the INFERVA endpoint. They mirror what the endpoint returns, field for field.
 
-/** 1 USDC = 1,000,000 micro units. The `/api/*` routes report amounts as integers in micro units. */
+/** 1 USDG = 1,000,000 micro units. The `/api/*` routes report amounts as integers in micro units. */
 export const UNIT = 1_000_000;
 
-/** Convert an integer micro-unit amount (as returned by the `/api/*` routes) to a decimal USDC or INFER amount. */
+/** Convert an integer micro-unit amount (as returned by the `/api/*` routes) to a decimal USDG amount. */
 export const fromMicro = (micro: number): number => micro / UNIT;
 
 // ---------- chat completions ----------
@@ -37,19 +37,15 @@ export type Usage = {
   total_tokens: number;
 };
 
-/** Cost split of one request, in USDC (decimal, not micro units). */
+/** Cost split of one request, in USDG (decimal, not micro units). */
 export type InfervaBreakdown = {
-  /** Provider cost before discount. Repaid to the capacity sponsor. */
+  /** Provider cost. Repaid to the capacity sponsor. */
   provider_cost: number;
-  /** Tier discount taken off the provider cost. */
-  discount: number;
   /** Protocol fee on top of the provider cost. */
   protocol_fee: number;
-  /** Part of the protocol fee that went to $INFER stakers. */
-  to_stakers: number;
-  /** Part of the protocol fee that went to the capacity sponsor. */
+  /** Part of the protocol fee that went to the capacity sponsor (`sponsor_share_bps`). */
   to_sponsor: number;
-  /** Part of the protocol fee that went to the treasury (includes the staker share when nobody is staked). */
+  /** The rest of the protocol fee, which goes to the treasury. */
   to_treasury: number;
 };
 
@@ -57,12 +53,8 @@ export type InfervaBreakdown = {
 export type InfervaBlock = {
   /** Name of the provider that served the request. */
   provider: string;
-  /** Whether the request was routed with priority (Tier 2 and above). */
-  priority: boolean;
-  /** The payer's tier at the time of the request, e.g. `"No tier"`, `"Tier 1"`. */
-  tier: string;
-  /** Total charged in USDC: provider cost minus discount plus protocol fee. */
-  cost_usdc: number;
+  /** Total charged in USDG: provider cost plus protocol fee. */
+  cost_usdg: number;
   breakdown: InfervaBreakdown;
   /** Id of the sponsored capacity position that served the request. */
   capacity: string;
@@ -118,8 +110,8 @@ export type Model = {
   owned_by: string;
   /** Present on `auto` only. */
   description?: string;
-  /** Provider price in USDC per 1,000 tokens, before discount and protocol fee. Absent on `auto`. */
-  price_per_1k_usdc?: number;
+  /** Provider price in USDG per 1,000 tokens, before the protocol fee. Absent on `auto`. */
+  price_per_1k_usdg?: number;
 };
 
 export type ModelList = { object: "list"; data: Model[] };
@@ -132,8 +124,8 @@ export type Stats = {
   fees: number;
   requests: number;
   treasury: number;
-  totalStaked: number;
-  stakers: number;
+  /** Fee share paid to capacity sponsors, all time. */
+  sponsorFees: number;
   capacityTotal: number;
   capacityRemaining: number;
   sponsors: number;
@@ -152,22 +144,14 @@ export type ParamKind = "bps" | "amount" | "seconds" | "count";
 /** Known protocol parameters. The endpoint may return more keys as governance adds them. */
 export type KnownParam =
   | "fee_bps"
-  | "staker_share_bps"
   | "sponsor_share_bps"
   | "epoch_seconds"
-  | "tier1_stake"
-  | "tier2_stake"
-  | "tier3_stake"
-  | "tier1_discount_bps"
-  | "tier2_discount_bps"
-  | "tier3_discount_bps"
   | "provider_min_bond"
   | "vote_seconds"
   | "quorum"
-  | "provider_min_stake"
+  | "proposal_min_infer"
   | "provider_unbond_seconds"
-  | "congestion_capacity_rpm"
-  | "congestion_threshold_bps";
+  | "congestion_capacity_rpm";
 
 /** `bps` values are basis points, `amount` values are micro units, `seconds` are seconds. */
 export type Params = Partial<Record<KnownParam, number>> & Record<string, number>;
@@ -176,7 +160,7 @@ export type ParamInfo = { label: string; kind: ParamKind; governable: boolean };
 
 export type ParamsResponse = { params: Params; info: Record<string, ParamInfo> };
 
-/** One record of the hash-chained settlement log. Amounts are integers in micro USDC. */
+/** One record of the hash-chained settlement log. Amounts are integers in micro USDG. */
 export type SettlementRecord = {
   seq: number;
   id: string;
@@ -186,13 +170,15 @@ export type SettlementRecord = {
   model: string;
   tokens: number;
   base: number;
+  /** Part of the settlement hash. 0 on current records; records from the earlier fee schedule may carry a value. */
   discount: number;
   fee: number;
+  /** Legacy column, not hashed. 0 on current records. */
   to_stakers: number;
   to_sponsor: number;
   to_treasury: number;
   capacity_id: string;
-  /** 1 when routed with priority, else 0. */
+  /** Legacy column, not hashed. 0 on current records. */
   priority: number;
   epoch: number;
   prev_hash: string;

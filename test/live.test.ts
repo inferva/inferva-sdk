@@ -11,7 +11,7 @@ describe.skipIf(!live)("live endpoint", () => {
     const res = await client.models.list();
     expect(res.object).toBe("list");
     expect(res.data[0]?.id).toBe("auto");
-    for (const m of res.data.slice(1)) expect(typeof m.price_per_1k_usdc).toBe("number");
+    for (const m of res.data.slice(1)) expect(typeof m.price_per_1k_usdg).toBe("number");
   });
 
   it("reads network stats", async () => {

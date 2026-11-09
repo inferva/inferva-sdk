@@ -51,7 +51,7 @@ export class BadRequestError extends InfervaError {}
 /** 401 `invalid_api_key`: missing, unknown or revoked key. */
 export class AuthenticationError extends InfervaError {}
 
-/** 402 `insufficient_funds`: the key owner's USDC balance cannot cover the request. Not charged. */
+/** 402 `insufficient_funds`: the key owner's USDG balance cannot cover the request. Not charged. */
 export class InsufficientFundsError extends InfervaError {}
 
 /** 402 `spend_cap_reached`: the key's monthly spend cap would be exceeded. Not charged. */
@@ -66,7 +66,7 @@ export class ModelNotFoundError extends InfervaError {}
 /** 404 on a route that does not exist. */
 export class NotFoundError extends InfervaError {}
 
-/** 429 `rate_limit_exceeded`: over the tier's requests per minute. */
+/** 429 `rate_limit_exceeded`: over the per-account requests per minute (the same limit for everyone). */
 export class RateLimitError extends InfervaError {
   /** Seconds to wait, from the `Retry-After` header. */
   get retryAfter(): number | undefined {

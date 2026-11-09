@@ -51,7 +51,7 @@ type Call = {
  * ```ts
  * const inferva = new InfervaClient({ apiKey: process.env.INFERVA_KEY });
  * const res = await inferva.chat.completions.create({ messages: [{ role: "user", content: "Hello" }] });
- * console.log(res.choices[0].message.content, res.inferva.cost_usdc);
+ * console.log(res.choices[0].message.content, res.inferva.cost_usdg);
  * ```
  */
 export class InfervaClient {
@@ -88,7 +88,7 @@ export class InfervaClient {
     list: (options?: RequestOptions) => this.request<ModelList>({ method: "GET", path: "/v1/models", options }),
   };
 
-  /** Network totals: volume, fees, staking, capacity, providers and the last 24 epochs. Amounts in micro units. */
+  /** Network totals: volume, fees, sponsor and treasury shares, capacity, providers and the last 24 epochs. Amounts in micro units. */
   stats(options?: RequestOptions): Promise<Stats> {
     return this.request({ method: "GET", path: "/api/stats", options });
   }

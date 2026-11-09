@@ -17,7 +17,7 @@
     "inference",
     "chat-completions",
     "openai-compatible",
-    "usdc",
+    "usdg",
     "sdk"
   ],
   "sideEffects": false,

@@ -1,17 +1,13 @@
 import type { ChatCompletion, ChatCompletionChunk, InfervaBlock } from "../src";
 
-// Example values are taken from the INFERVA docs (API reference, chat completions example).
+// Example values based on the INFERVA docs chat completions example.
 export const INFERVA_BLOCK: InfervaBlock = {
   provider: "Basalt Inference",
-  priority: false,
-  tier: "No tier",
-  cost_usdc: 0.000099,
+  cost_usdg: 0.000099,
   breakdown: {
     provider_cost: 0.00009,
-    discount: 0,
     protocol_fee: 0.000009,
-    to_stakers: 0.000004,
-    to_sponsor: 0.000003,
+    to_sponsor: 0.000007,
     to_treasury: 0.000002,
   },
   capacity: "cap_9e41d2a07b3c",

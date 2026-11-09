@@ -21,7 +21,7 @@ describe("request shaping", () => {
     expect(JSON.parse(init.body as string)).toEqual({ model: "auto", messages: [{ role: "user", content: "Hello" }], max_tokens: 64 });
 
     expect(res.choices[0]!.message.content).toBe("Hello! How can I help?");
-    expect(res.inferva.cost_usdc).toBe(0.000099);
+    expect(res.inferva.cost_usdg).toBe(0.000099);
     expect(res.inferva.breakdown.protocol_fee).toBe(0.000009);
     expect(res.inferva.receipt).toBe(`https://dapp.inferva.xyz/receipt/${res.id}`);
   });

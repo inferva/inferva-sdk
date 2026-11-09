@@ -35,7 +35,7 @@ describe("streaming", () => {
     expect(chunks.map((c) => c.choices[0]!.delta.content ?? "").join("")).toBe("Hello! How can I help?");
     expect(chunks[3]!.choices[0]!.finish_reason).toBe("stop");
     expect(stream.usage).toEqual({ prompt_tokens: 12, completion_tokens: 38, total_tokens: 50 });
-    expect(stream.inferva?.cost_usdc).toBe(0.000099);
+    expect(stream.inferva?.cost_usdg).toBe(0.000099);
     expect(stream.inferva?.settlement.prev_hash).toBe("5d029b4f");
   });
 
@@ -69,7 +69,7 @@ describe("streaming", () => {
     const fetch = mockFetch(
       sse([
         event(chunk({ role: "assistant", content: "partial" })),
-        event({ error: { message: "This request costs 0.000099 USDC and the key owner has 0.", type: "insufficient_funds" } }),
+        event({ error: { message: "This request costs 0.000099 USDG and the key owner has 0.", type: "insufficient_funds" } }),
         event("[DONE]"),
       ]),
     );
