@@ -1,0 +1,59 @@
+{
+  "name": "@inferva/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript client for the INFERVA agent endpoint: OpenAI-compatible chat completions with a typed cost and settlement block, streaming, typed errors and read-only network stats.",
+  "license": "MIT",
+  "author": "INFERVA",
+  "type": "module",
+  "homepage": "https://inferva.xyz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inferva/inferva-sdk.git"
+  },
+  "bugs": "https://github.com/inferva/inferva-sdk/issues",
+  "keywords": [
+    "inferva",
+    "ai-agents",
+    "inference",
+    "chat-completions",
+    "openai-compatible",
+    "usdc",
+    "sdk"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:live": "INFERVA_LIVE=1 vitest run test/live.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}
